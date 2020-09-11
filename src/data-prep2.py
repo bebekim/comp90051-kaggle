@@ -5,6 +5,7 @@ import csv
 import numpy as np
 import random
 from math import floor, ceil, log10
+from copy import copy
 
 
 def read_file(input: str):
@@ -107,19 +108,36 @@ def source_breakdown(input: dict):
 
 #     return output_list
 
-def construct_positive_edges(input: dict):
-    positive_edges = []
+def record_outcomes(input: dict):
+    outcome = []
+    sink_list = list(input.keys())
     for index, k in enumerate(input):
         u_edges = get_dict_value(input, k)
         u_class = determine_node_class(edges=u_edges)
+        if u_class > 0:
+            # u_class_repeat = repeat(u_class, len(u_edges))
+            # u = repeat(k, len(u_edges))
+            outcome = repeat(1, len(u_edges))
+            # z = list(zip(u, u_edges, u_class_repeat, outcome))
+            # for item in z:
+            #     outcome.append(item)
+        else:
+            u_edges = copy(sink_list)
+            u_edges.remove(k)
+
+            # u_class_repeat = repeat(0, len(u_edges))
+            # u = repeat(k, len(u_edges))
+            outcome = repeat(0, len(u_edges))
+            # z = list(zip(u, u_edges, u_class_repeat, outcome))
+            # for item in z:
+            #     outcome.append(item)
+
         u_class_repeat = repeat(u_class, len(u_edges))
         u = repeat(k, len(u_edges))
-        outcome = repeat(1, len(u_edges))
         z = list(zip(u, u_edges, u_class_repeat, outcome))
         for item in z:
-            positive_edges.append(item)
-
-    return positive_edges
+            outcome.append(item)
+    return outcome
 
 
 def counter(input: dict, n: int):
@@ -183,7 +201,7 @@ if __name__ == "__main__":
     input_path = Path("./input/train.txt")
     output_path = Path("./input/train.csv")
     input_dict, _ = read_file(input=input_path)
-    positive_edge_list = construct_positive_edges(input_dict)
+    links = record_outcomes(input_dict)
 
     # test_path = Path("./input/test-public.txt")
     # test_dict, test_list = read_file(input=test_path)
