@@ -2,10 +2,8 @@ import pandas as pd
 from pathlib import Path
 from itertools import repeat
 import csv
-import numpy as np
-import random
-from math import floor, ceil, log10
-
+from math import ceil, log10
+import swifter
 
 def read_file(input: str):
     positive_dict = dict()
@@ -49,6 +47,10 @@ def determine_node_class(edges: list):
         return ceil(log_value)
 
 
+def get_edge_count(input: dict, node_num: int):
+    edge_cnt = get_dict_value(input, node_num)
+    edge_class = determine_node_class(edges=edge_cnt)
+    return (edge_cnt, edge_class)
 
 
 
@@ -72,8 +74,7 @@ def determine_node_class(edges: list):
 def build_positive_edges(input: dict):
     positive_edges = []
     for _, k in enumerate(input):
-        u_edges = get_dict_value(input, k)
-        u_class = determine_node_class(edges=u_edges)
+        u_edges, u_class = get_edge_count(input, k)
         u_class_repeat = repeat(u_class, len(u_edges))
         u = repeat(k, len(u_edges))
         outcome = repeat(1, len(u_edges))
@@ -98,17 +99,22 @@ def build_negative_edges(negative_nodes: list, positive_nodes: dict):
     return negative_edges
 
 
+def build_edge_list(positive_link: dict, negative_node: list):
+    positive_edge_list = build_positive_edges(positive_link)
+    negative_edge_list = build_negative_edges(negative_nodes=negative_node_list, positive_nodes=positive_link_dict)
+    edge_list = positive_edge_list + negative_edge_list
+    return edge_list
+    
+
 def construct_positive_edges(input: dict):
     positive_edges = []
     for _, source in enumerate(input):
         # u_edges is a list of edges
-        source_edges = get_dict_value(input, source)
-        source_class = determine_node_class(edges=source_edges)
+        source_edges, source_class = get_edge_count(input, source)
         outcome = 1
 
         for sink in source_edges:
-            sink_edges = get_dict_value(input, sink)
-            sink_class = determine_node_class(edges=sink_edges)
+            sink_edges, sink_class = get_edge_count(input, sink)
             item = (source , sink, source_class, sink_class, outcome)
             positive_edges.append(item)
     return positive_edges
@@ -136,29 +142,33 @@ def write_source_csv(output, data: list):
             csv_out.writerow(row)
 
 
-# baseline model
-def create_baseline(feature_cnt):
-    # create model
-    model = Sequential()
-    model.add(Dense(feature_cnt, input_dim=feature_cnt, activation='relu'))
-    model.add(Dense(1, activation='sigmoid'))
-    # Compile model
-    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-    return model
+# this is an ill-defined function
+# looks up positive_link_dict without explicitly saying so
+def lookup_sink_class(node_num: int):
+    # using positive_link_dict is troubling
+    _, edge_class = get_edge_count(positive_link_dict, node_num)
+    return edge_class
+
 
 
 if __name__ == "__main__":
     input_path = Path("./input/train.txt")
-    output_path = Path("./input/train.csv")
     positive_link_dict, negative_node_list = read_file(input=input_path)
-    positive_edge_list = build_positive_edges(positive_link_dict)
-    negative_edge_list = build_negative_edges(negative_nodes=negative_node_list, positive_nodes=positive_link_dict)
-    edge_list = positive_edge_list + negative_edge_list
+    table = build_edge_list(positive_link_dict, negative_node_list)
+
     cols = ['Source', 'Sink', 'SourceClass', 'Outcome']
-    df = pd.DataFrame(edge_list, columns=cols)
+    df = pd.DataFrame(table, columns=cols)
+
+    output_path = Path("./input/table.csv")
     df.to_csv(output_path)
-    df_sample = df.sample(n=1000)
-    df_sample.to_csv('input/sample1000.csv')
+
+    SAMPLE_SIZE = 100000
+    df_sample = df.sample(n=SAMPLE_SIZE)
+    df_sample.to_csv('input/sample.csv')
+
+    df_sample["SinkClass"] = df_sample.Sink.swifter.apply(lookup_sink_class)
+    df_sample = df_sample[['Source', 'Sink', 'SourceClass', 'SinkClass', 'Outcome']]
+    df_sample.to_csv('input/sample_fe.csv')
     # test_path = Path("./input/test-public.txt")
     # test_dict, test_list = read_file(input=test_path)
     # test_distribution = []
