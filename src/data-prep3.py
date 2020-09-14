@@ -115,28 +115,23 @@ def record_outcomes(input: dict):
         u_edges = get_dict_value(input, k)
         u_class = determine_node_class(edges=u_edges)
         if u_class > 0:
-            # u_class_repeat = repeat(u_class, len(u_edges))
-            # u = repeat(k, len(u_edges))
+            u_class_repeat = repeat(u_class, len(u_edges))
+            u = repeat(k, len(u_edges))
             outcome = repeat(1, len(u_edges))
-            # z = list(zip(u, u_edges, u_class_repeat, outcome))
-            # for item in z:
-            #     outcome.append(item)
+            z = list(zip(u, u_edges, u_class_repeat, outcome))
+            for item in z:
+                outcome.append(item)
         else:
             u_edges = copy(sink_list)
             u_edges.remove(k)
 
-            # u_class_repeat = repeat(0, len(u_edges))
-            # u = repeat(k, len(u_edges))
+            u_class_repeat = repeat(0, len(u_edges))
+            u = repeat(k, len(u_edges))
             outcome = repeat(0, len(u_edges))
-            # z = list(zip(u, u_edges, u_class_repeat, outcome))
-            # for item in z:
-            #     outcome.append(item)
+            z = list(zip(u, u_edges, u_class_repeat, outcome))
+            for item in z:
+                outcome.append(item)
 
-        u_class_repeat = repeat(u_class, len(u_edges))
-        u = repeat(k, len(u_edges))
-        z = list(zip(u, u_edges, u_class_repeat, outcome))
-        for item in z:
-            outcome.append(item)
     return outcome
 
 
