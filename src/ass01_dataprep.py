@@ -4,10 +4,10 @@ from itertools import repeat
 import csv
 from math import ceil, log10
 import swifter
+from collections import defaultdict
 
 def read_file(input: str):
     positive_dict = dict()
-    negative_list = list()
     # read txt file as a list of lines
     with open(input) as f:
         for line in f:
@@ -16,15 +16,14 @@ def read_file(input: str):
             # input_list.append(linenum_list)
             key = linenum_list[0]
             value = linenum_list[1:]
-            # if node has no outgoing edge
-            if not value:
-                negative_list.append(key)
-                pass
-            # if node has outgoing edge    
-            else:
-                positive_dict[key] = value
-        output = (positive_dict, negative_list)
-    return output
+            positive_dict[key] = value
+            # if not value:
+            #     # nodes are registered but have no child
+            #     edge_profiles[0] |= {key}
+            # # if node has outgoing edge    
+            # else:
+            #     positive_dict[key] = value
+    return positive_dict
 
 
 def get_dict_value(input: dict, u: int):
@@ -44,9 +43,13 @@ def determine_node_class(edges: list):
     # u is in training source and have 1 or more connecting edge
     else:
         log_value = log10(len(edges))
-        return ceil(log_value)
+        # special treatment for edges with one connecting node so that they are not considered empty
+        if log_value == 0:
+            return 1
+        else:
+            return ceil(log_value)
 
-
+# 2407470
 def get_edge_count(input: dict, node_num: int):
     edge_cnt = get_dict_value(input, node_num)
     edge_class = determine_node_class(edges=edge_cnt)
@@ -71,24 +74,46 @@ def get_edge_count(input: dict, node_num: int):
 
 #     return output_list
 
-def build_positive_edges(input: dict):
-    positive_edges = []
+
+# def build_positive_edges(input: dict, edges_categorized: dict):
+#     positive_edges = []
+#     for _, k in enumerate(input):
+#         k_edges, k_class = get_edge_count(input, k)
+#         k_class_repeat = repeat(k_class, len(k_edges))
+#         u = repeat(k, len(k_edges))
+#         outcome = repeat(1, len(k_edges))
+#         z = list(zip(u, k_edges, k_class_repeat, outcome))
+#         for item in z:
+#             positive_edges.append(item)
+#         edges_categorized[k_class] |= {k}
+
+#     return positive_edges, edges_categorized
+
+def update_edge_profile(input: dict):
+    edge_profiles = defaultdict(set)
     for _, k in enumerate(input):
-        u_edges, u_class = get_edge_count(input, k)
-        u_class_repeat = repeat(u_class, len(u_edges))
-        u = repeat(k, len(u_edges))
-        outcome = repeat(1, len(u_edges))
-        z = list(zip(u, u_edges, u_class_repeat, outcome))
-        for item in z:
-            positive_edges.append(item)
-    return positive_edges
+        _, k_class = get_edge_count(input, k)
+        edge_profiles[k_class] |= {k}
 
+    return edge_profiles
 
-def build_negative_edges(negative_nodes: list, positive_nodes: dict):
-    negative_edges = []
-    u_nodes = negative_nodes
-    v_nodes = list(positive_nodes.keys())
+# build_negative_edges(positive_link, updated_edge_profiles)
+def build_sample_edges(positive_nodes: dict, edges_categorized: dict, graph_size: int):
+    edges_built = 0
+    p_nodes = list(positive_nodes.keys())
+    while edges_built < graph_size:
+        # choose a source
+            # randomly choose from p_nodes
+        # determine source class
+            # find source class
+            # build positive links based on positive_nodes
+        # reference check with edges_categorized:
+            # randomly choose from a edges_categorized (k, v) 
 
+        # register the pair
+        # (u, v, u_class, outcome)
+        edges_built += 1
+    # u_nodes = negative_nodes
     u_class = 0
     outcome = 0
     for u in negative_nodes:
@@ -99,12 +124,20 @@ def build_negative_edges(negative_nodes: list, positive_nodes: dict):
     return negative_edges
 
 
-def build_edge_list(positive_link: dict, negative_node: list):
-    positive_edge_list = build_positive_edges(positive_link)
-    negative_edge_list = build_negative_edges(negative_nodes=negative_node_list, positive_nodes=positive_link_dict)
-    edge_list = positive_edge_list + negative_edge_list
+# def build_edge_list(positive_link: dict, negative_node: list):
+#     positive_edge_list = build_positive_edges(positive_link)
+#     negative_edge_list = build_negative_edges(negative_nodes=negative_node_list, positive_nodes=positive_link_dict)
+#     edge_list = positive_edge_list + negative_edge_list
+#     return edge_list
+    
+
+# build_positive_edges(positive_link, edges=edge_profiles)
+def build_edge_list(positive_nodes: dict, edge_profiles: dict, graph_size: int):
+    negative_edge_list = build_sample_edges(positive_nodes, edge_profiles, graph_size)
+    edge_list += negative_edge_list
     return edge_list
     
+
 
 def construct_positive_edges(input: dict):
     positive_edges = []
@@ -153,8 +186,12 @@ def lookup_sink_class(node_num: int):
 
 if __name__ == "__main__":
     input_path = Path("./input/train.txt")
-    positive_link_dict, negative_node_list = read_file(input=input_path)
-    table = build_edge_list(positive_link_dict, negative_node_list)
+    # positive_link_dict, negative_node_list = read_file(input=input_path)
+    # table = build_edge_list(positive_link_dict, negative_node_list)
+    input_nodes = read_file(input=input_path)
+    input_edge_profiles = update_edge_profile(input_nodes)
+    GRAPH_SIZE = 100000
+    graph = build_edge_list(input_nodes, input_edge_profiles, GRAPH_SIZE)
 
     cols = ['Source', 'Sink', 'SourceClass', 'Outcome']
     df = pd.DataFrame(table, columns=cols)
