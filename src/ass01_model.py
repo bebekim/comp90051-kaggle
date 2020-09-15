@@ -23,6 +23,7 @@ y = dataset[:, -1]
 X = np.asarray(X).astype(np.float32)
 y = np.asarray(y).astype(np.uint8)
 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, random_state=42)
 
 # baseline model
 def baseline_model():
@@ -34,6 +35,24 @@ def baseline_model():
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     return model
 
-estimator = KerasRegressor(build_fn=baseline_model, epochs=100, batch_size=5, verbose=0)
-kfold = KFold(n_splits=10)
-results = cross_val_score(estimator, X, y, cv=kfold)
+def get_results():
+    estimator = KerasRegressor(build_fn=baseline_model, epochs=100, batch_size=5, verbose=0)
+    kfold = KFold(n_splits=10)
+    results = cross_val_score(estimator, X, y, cv=kfold)
+
+model = Sequential()
+model.add(Dense(256, input_dim=2, activation='relu'))
+model.add(Dense(4, activation='relu'))
+model.add(Dense(1, activation='sigmoid'))
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+model.fit(X_train, y_train, epochs=10)
+
+preds = model.predict(X_test)
+
+for i in range(0, len(preds)):
+    if preds[i] >= .5:
+        preds[i] = 1
+    else:
+        preds[i] = 0
+
+print(classification_report(y_test, preds))

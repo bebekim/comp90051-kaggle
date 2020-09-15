@@ -4,6 +4,7 @@ from itertools import repeat
 import csv
 from math import ceil, log10
 import swifter
+from collections import defaultdict
 
 def read_file(input: str):
     positive_dict = dict()
@@ -73,15 +74,19 @@ def get_edge_count(input: dict, node_num: int):
 
 def build_positive_edges(input: dict):
     positive_edges = []
+    edge_profiles = defaultdict(set)
     for _, k in enumerate(input):
         u_edges, u_class = get_edge_count(input, k)
         u_class_repeat = repeat(u_class, len(u_edges))
         u = repeat(k, len(u_edges))
+        edge_profiles[u_class] |= {k}
         outcome = repeat(1, len(u_edges))
         z = list(zip(u, u_edges, u_class_repeat, outcome))
         for item in z:
             positive_edges.append(item)
-    return positive_edges
+
+    output = (positive_edges, edge_profiles)
+    return output
 
 
 def build_negative_edges(negative_nodes: list, positive_nodes: dict):
@@ -99,8 +104,12 @@ def build_negative_edges(negative_nodes: list, positive_nodes: dict):
     return negative_edges
 
 
+# traverse through source_class = 1
+
+
+
 def build_edge_list(positive_link: dict, negative_node: list):
-    positive_edge_list = build_positive_edges(positive_link)
+    positive_edge_list, edge_profiles = build_positive_edges(positive_link)
     negative_edge_list = build_negative_edges(negative_nodes=negative_node_list, positive_nodes=positive_link_dict)
     edge_list = positive_edge_list + negative_edge_list
     return edge_list
